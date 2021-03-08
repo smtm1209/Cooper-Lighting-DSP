@@ -2,7 +2,7 @@ function newMask = MaskGenerate (d, pastMask)
 %inputs:
 %   pastMask: Mask generated previously
 %   d: input from mic
-%   Fs: sampling frequency
+
 %output: 
 %   newMask: new mask generated
 
