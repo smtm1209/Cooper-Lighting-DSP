@@ -26,25 +26,24 @@ mask = mask3;
 omega = linspace(0,2*pi,length(mask1));
 figure(1)
 subplot(2,1,1)
-plot(omega,abs(fft(sample1)))
+plot(omega,abs(fft(sample1))); title('DFT of the actual noise')
 subplot(2,1,2)
-plot(omega,abs(fft(mask1)))
+plot(omega,abs(fft(mask1))); title('DFT of the mask')
 
 
 figure(2)
 subplot(2,1,1)
-plot(omega, abs(fft(sample1+sample2)))
+plot(omega, abs(fft(sample1+sample2))); title('DFT of the actual noise')
 subplot(2,1,2)
-plot(omega,abs(fft(mask2)))
-
+plot(omega,abs(fft(mask2))); title('DFT of the mask')
 
 figure(3)
 subplot(2,1,1)
-plot(omega, abs(fft(sample3)))
+plot(omega, abs(fft(sample3))); title('DFT of the actual noise')
 subplot(2,1,2)
-plot(omega,abs(fft(mask3)))
+plot(omega,abs(fft(mask3))); title('DFT of the mask')
 
 %% sound
-%sound(sample1+mask1,Fs)
-%sound(sample1+sample2+mask2,Fs)
-sound(sample3+mask3,Fs)
+%sound(sample1+mask1,Fs) %first iteration
+%sound(sample1+sample2+mask2,Fs) %second iteration
+%sound(sample3+mask3,Fs) %third iteration
