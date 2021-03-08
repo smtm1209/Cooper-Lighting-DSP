@@ -25,7 +25,7 @@ function newMask = MaskGenerate (d, pastMask)
         [dhat, e, w] = nlms(pastMask,d,mu,w);
     end
     
-    %% FFT of e (out estimated environment noise)
+    %% FFT of e (estimated environment noise)
     E = fft(e);
     Emag = abs(E); %Spectral magnitude
     Edb = 20*log10(Emag); %Spectral magnitude in dB
