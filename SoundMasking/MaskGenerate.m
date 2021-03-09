@@ -15,7 +15,7 @@ function newMask = MaskGenerate (d, pastMask)
     %if paskMask was defined, do adaptive filtering.
     else 
         %apatation factor
-        mu = 0.02; 
+        mu = 0.002; 
         
         %initial filter weight guess
         N = 10;
