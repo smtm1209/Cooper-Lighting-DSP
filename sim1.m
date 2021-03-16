@@ -6,12 +6,12 @@ close all;
 %% Real-World Model Parameters
 
 % Load Original Audio
-mp3_fname = "./signals/coffee_short.mp3";
+mp3_fname = "./signals/coffee_beep.mp3";
 [raw_sig, fs_original] = audioread(mp3_fname);
 
 % Echo Parameters
 echo_taps = 128;
-echo_loss_db = 20; % voltage dB
+echo_loss_db = 0; % voltage dB
 
 % Basic Testing Filter Parameters
 sys_taps = 128;
@@ -197,8 +197,8 @@ for k=1:numel(sig)
         .*  y_win_canc / (nlms_eps + y_win_canc'*y_win_canc);
     lms_fir(1) = 0;
     
-    e_win_nocanc = [e_k; e_win_nocanc(1:end-1, :)];
-    in_nocanc(k) = e_k;
+    e_win_canc = [e_k; e_win_canc(1:end-1, :)];
+    in_canc(k) = e_k;
     
     % apply system filter
     Efft = fft(e_win_canc);
@@ -216,10 +216,23 @@ for k=1:numel(sig)
     y_k = s(end);
     
     % prep for next iteration    
-    out_nocanc(k) = y_k;
-    y_win_nocanc = [y_k; y_win_nocanc(1:end-1, :)];
+    out_canc(k) = y_k;
+    y_win_canc = [y_k; y_win_canc(1:end-1, :)];
     
 end
+
+%% Play Audio for each method
+original_signal_player = audioplayer(sig, fs);
+playblocking(original_signal_player);
+
+noecho_player = audioplayer(out_noecho, fs);
+playblocking(noecho_player);
+
+nocanc_player = audioplayer(out_nocanc, fs);
+playblocking(nocanc_player);
+
+canc_player = audioplayer(out_canc, fs);
+playblocking(canc_player);
 
 
 
