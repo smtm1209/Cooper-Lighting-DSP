@@ -1,0 +1,50 @@
+# CompilerName=clang
+# Mode=optim
+ninja_required_version = 1.3
+
+# Basic folders
+root = .
+builddir = $root/build/maci64
+matlabdir = /Applications/MATLAB_R2020b.app
+startdir = /Users/hsy/Library/Mobile Documents/com~apple~CloudDocs/DropboxCopy/GT/Fall2020/Senior Project1/Sound Masking
+
+# Toolchain information
+cc = /usr/bin/xcrun -sdk macosx10.15 clang
+cxx = /usr/bin/xcrun -sdk macosx10.15 clang++
+linker = /usr/bin/xcrun -sdk macosx10.15 clang
+linkerxx = /usr/bin/xcrun -sdk macosx10.15 clang++
+
+cflags =  -fno-common -arch x86_64 -mmacosx-version-min=10.14 -fexceptions -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -DMATLAB_MEX_FILE  -O2 -fwrapv -DNDEBUG -fvisibility=hidden -std=c99 -I "$root" -I "$startdir" -I "$root/interface" -I "$matlabdir/extern/include" -I "." -DMODEL=MaskGenerate_mex -DMW_NEEDS_VERSION_H -c 
+
+cxxflags =  -fno-common -arch x86_64 -mmacosx-version-min=10.14 -fexceptions -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fobjc-arc -std=c++11 -stdlib=libc++ -DMATLAB_MEX_FILE  -O2 -fwrapv -DNDEBUG -fvisibility=hidden -std=c++11 -I "$root" -I "$startdir" -I "$root/interface" -I "$matlabdir/extern/include" -I "." -DMODEL=MaskGenerate_mex -DMW_NEEDS_VERSION_H -c 
+
+ldflags =  -Wl,-twolevel_namespace -undefined error -arch x86_64 -mmacosx-version-min=10.14 -Wl,-syslibroot,/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -framework Cocoa -bundle  -stdlib=libc++ -L"$matlabdir/bin/maci64" -lmx -lmex -lmat -L"$matlabdir/extern/bin/maci64" -lMatlabDataArray -lMatlabEngine  -Wl,-rpath,@loader_path -o MaskGenerate_mex.mexmaci64 -lemlrt -lcovrt -lut -lmwmathutil 
+
+# Build Rules
+rule cc
+    command = $cc $cflags $in -o $out
+
+rule cxx
+    command = $cxx $cxxflags $in -o $out
+
+rule link
+    command = $linker $in $ldflags
+
+rule linkxx
+    command = $linkerxx $in $ldflags
+
+# Build
+build $builddir/MaskGenerate_data.o : cxx $root/MaskGenerate_data.cpp
+build $builddir/rt_nonfinite.o : cxx $root/rt_nonfinite.cpp
+build $builddir/MaskGenerate_initialize.o : cxx $root/MaskGenerate_initialize.cpp
+build $builddir/MaskGenerate_terminate.o : cxx $root/MaskGenerate_terminate.cpp
+build $builddir/MaskGenerate.o : cxx $root/MaskGenerate.cpp
+build $builddir/randn.o : cxx $root/randn.cpp
+build $builddir/_coder_MaskGenerate_api.o : cxx $root/interface/_coder_MaskGenerate_api.cpp
+build $builddir/_coder_MaskGenerate_mex.o : cxx $root/interface/_coder_MaskGenerate_mex.cpp
+build $builddir/nlms.o : cxx $root/nlms.cpp
+build $builddir/_coder_MaskGenerate_info.o : cxx $root/interface/_coder_MaskGenerate_info.cpp
+build $builddir/cpp_mexapi_version.o : cxx $matlabdir/extern/version/cpp_mexapi_version.cpp
+
+# Link
+build $root/MaskGenerate_mex.mexmaci64 : linkxx $builddir/MaskGenerate_data.o $builddir/rt_nonfinite.o $builddir/MaskGenerate_initialize.o $builddir/MaskGenerate_terminate.o $builddir/MaskGenerate.o $builddir/randn.o $builddir/_coder_MaskGenerate_api.o $builddir/_coder_MaskGenerate_mex.o $builddir/nlms.o $builddir/_coder_MaskGenerate_info.o $builddir/cpp_mexapi_version.o 
