@@ -78,7 +78,9 @@ void dsp(float inputBuffer[], int &inputBufferIndex, mutex &readMutex, float *ou
         if (LOGS_ON)
             dsp_log << getTimestamp() << ": Write mutex locked" << endl;
 
-        *outputBuffer = *newOutputBuffer;
+        for (int i = 0; i < OUTPUT_BUFFER_SIZE; i++)
+            outputBuffer[i] = newOutputBuffer[i];
+        
         if (LOGS_ON)
             dsp_log << getTimestamp() << ": Buffers switched" << endl;
 
