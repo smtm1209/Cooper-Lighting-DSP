@@ -3,8 +3,9 @@
 
 #include "util.cpp"
 
-#define INPUT_BUFFER_SIZE 50
-#define OUTPUT_BUFFER_SIZE 10
+#define INPUT_BUFFER_SIZE 64
+#define OUTPUT_BUFFER_SIZE 64
+#define FILTER_LENGTH 10
 
 #define MIC_SLEEP 10000
 #define DSP_SLEEP 10000
