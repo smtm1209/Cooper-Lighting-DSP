@@ -12,7 +12,8 @@ fstream dsp_log = fstream(DSP_LOG_FILENAME, fstream::out);
 /**
  * Function for DSP
  * @param input input data
- * @param output output data
+ * @param output new output data
+ * @param outputBuffer current output data
  */
 void processData(float input[INPUT_BUFFER_SIZE], float output[OUTPUT_BUFFER_SIZE], float *outputBuffer, float whiteNoise[INPUT_BUFFER_SIZE])
 {
