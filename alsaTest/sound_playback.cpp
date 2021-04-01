@@ -111,17 +111,10 @@ int main(int argc, char **argv) {
     printf("sample size is %d\n",sample_size);
     printf("frame size is %lu\n", frames);
     snd_pcm_hw_params_get_period_time(params, &tmp, NULL);
-    int counter = 0;
-    int offset = 0;
-    //for (loops = (seconds * 1000000) / tmp; loops > 0; loops--) {
-    while(1) {
-        counter ++;
 
-        //printf("%d\n",counter);
-        //if (pcm = read(0, buff, buff_size) == 0) {
-        //  printf("Early end of file.\n"); 
-            //return 0;
-        //}
+    int offset = 0;
+
+    while(1) {
         for (int i = 0; i < frames; i++)
         {
             buff[i] = output[i+offset];
@@ -137,7 +130,6 @@ int main(int argc, char **argv) {
             printf("ERROR. Can't write to PCM device. %s\n", snd_strerror(pcm));
         }
     }
-    //}
 
     snd_pcm_drain(pcm_handle);
     snd_pcm_close(pcm_handle);
