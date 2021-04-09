@@ -3,63 +3,111 @@
 #include <complex>
 #include <iostream>
 #include <valarray>
- 
+#include <math.h>
+
 const double PI = 3.141592653589793238460;
  
 typedef std::complex<double> Complex;
 typedef std::valarray<Complex> CArray;
  
+float max_corr(float*x, float*d)
+{
+    float sum_x = 0;
+    float sum_d = 0;
+    for (int i = 0; i < BUFFER_SIZE; i++)
+    {
+        sum_x = sum_x + x[i];
+        sum_d = sum_d + d[i];
+    }
+    
+    float mean_x = sum_x / BUFFER_SIZE;
+    float mean_d = sum_d / BUFFER_SIZE;
+    //printf("mean of input is %f\n",mean_x);
+    //printf("mean of mask is %f\n", mean_d);
+
+    float tmp_x[BUFFER_SIZE];
+    float tmp_d[BUFFER_SIZE];
+
+    for (int i = 0; i < BUFFER_SIZE; i++)
+    {
+        tmp_x[i] = x[i]-mean_x;
+        tmp_d[i] = d[i]-mean_d;
+    }
+    
+    float num = 0;
+    for (int i = 0; i < BUFFER_SIZE; i++)
+    {
+        num = num + tmp_x[i] * tmp_d[i];
+    }
+    float denum;
+    float sum1 = 0;
+    float sum2 = 0;
+    for (int i = 0; i < BUFFER_SIZE; i ++)
+    {
+        sum1 = sum1 + tmp_x[i]*tmp_x[i];
+        sum2 = sum2 + tmp_d[i]*tmp_d[i];
+    }
+    denum = sqrt(sum1*sum2);
+    return num/denum;
+}
+
 /** 
  * Function for adaptive filtering
  * @param x pastMask
  * @param d input from mic
  * @param e array to hold the result of adaptive filtering
  */
-void nlms(float x[INPUT_BUFFER_SIZE], float d[INPUT_BUFFER_SIZE], float e[INPUT_BUFFER_SIZE])
+void nlms(float* x, float* d, float* e)
 {
-    float b_xx[FILTER_LENGTH];
-    float b_w;
-    float xx;
-    int temp = FILTER_LENGTH -1;
+
+    int N = FILTER_LENGTH;
     // mu: adaptation factor
     // w: filter weight
     // dhat: filter output(predicted value)
-    float mu = 0.002; //adaptation factor
+    float mu = 0.5; //adaptation factor
     float w[FILTER_LENGTH]; 
     float dhat[INPUT_BUFFER_SIZE];
 
-    //initialize to array of zeros
-    std::memset(&dhat[0], 0, INPUT_BUFFER_SIZE * sizeof(float));
-    std::memset(&e[0], 0, INPUT_BUFFER_SIZE * sizeof(float));
-    std::memset(&w[0], 0, FILTER_LENGTH * sizeof(float));
+    //initialize array of zeros
 
-    
-    //  now implement the adaptive filter
-    for (int n = 0; n < INPUT_BUFFER_SIZE-temp; n++) {
-
-        //  produce filtered output sample
-        b_w = 0.0;
-
-        //  update the filter coefficients
-        xx = 0.0;
-        for (int i = 0; i < FILTER_LENGTH; i++) {
-            float b_d;
-            b_d = x[(n - i) + temp];
-            b_xx[i] = b_d;
-            b_w += w[i] * b_d;
-            xx += b_d * b_d;
-        }
-
-        dhat[n + temp] = b_w;
-        b_w = d[n + temp] - b_w;
-        e[n + temp] = b_w;
-        for (int i = 0; i < FILTER_LENGTH; i++) {
-            w[i] += 2*mu * b_xx[i] * b_w / xx;
-        }
+    for (int i =0; i < INPUT_BUFFER_SIZE; i ++ )
+    {
+        dhat[i] = 0;
+        e[i] = 0;
     }
-    
+    for (int i = 0; i < N; i ++ )
+    {
+        w[i] = 0;
+    }
 
-    
+   float xx[N];
+   
+   for (int n = N; n <= BUFFER_SIZE; n ++)
+   {
+       int count = 0;
+       for (int i = n; i >= n-(N-1); i--)
+       {
+           xx[count] = x[i-1];
+           count ++;
+       }
+
+       float sum = 0;
+       for (int i = 0; i < N; i++)
+       {
+           sum = sum + w[i] * xx[i];
+       }
+        dhat[n-1] = sum; 
+        e[n-1] = d[n-1] - dhat[n-1];
+
+        float sum1= 0;
+        for (int i = 0; i < N ; i++)
+            sum1 = sum1 + xx[i]*xx[i];
+
+        for (int i = 0; i < N; i++)
+            w[i] = w[i] + 2.0*mu*xx[i]*e[n-1]/sum1;
+        
+   }
+
 }
 
 
