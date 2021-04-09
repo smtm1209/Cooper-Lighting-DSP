@@ -104,9 +104,8 @@ void dsp(char* pcm_ds_input_buffer, mutex &readMutex, char* pcm_ds_output_buffer
         
     while (1)
     {
-       // readMutex.lock();
-         // Read Input Buffer
-        
+
+         // Read Input Buffer 
         if (input1_ready)
         {
             //convert input to float array
@@ -117,13 +116,8 @@ void dsp(char* pcm_ds_input_buffer, mutex &readMutex, char* pcm_ds_output_buffer
                 if ( f> 1) f = 1;
                 if (f < -1) f = -1;
                 float_input[i] = f;
-                //printf("%f, ", f);
              }   
-             
-             //for (int i = 0 ; i <BUFFER_SIZE; i++)
-            // {
-                 //printf("%f," float_input[i]);
-             //}
+
             //convert past output to floatarry
             for (int i = 0; i < BUFFER_SIZE; i ++)
             {
@@ -153,90 +147,51 @@ void dsp(char* pcm_ds_input_buffer, mutex &readMutex, char* pcm_ds_output_buffer
             printf("corr is %f\n",max);
             for (int i = 0; i < BUFFER_SIZE; i ++)
                 shifted_mask[(i+shift_max)%BUFFER_SIZE] = 1*float_past_output[i];
-               //processData(float_input,float_past_output,float_new_output); 
+
             processData(float_input,shifted_mask,float_new_output,count,w_data);
-            //processData(shifted_mask,float_input,float_new_output);
-            //writeMutex.lock();
-            //processData(pcm_ds_input_buffer, pcm);
+
+                    
+            for( int i =0;i<BUFFER_SIZE;i++)
+            {
+                float f = float_new_output[i];
+                f = f* 32768;
+                if (f > 32767) f = 32767;
+                if (f < -32768) f = -32768;
+                tmp3[i] = (int16_t)f;
+            }
             
-            //while(1)
-            //{
-                //if (output1_change)
-                //{
-                        
-                    /*
-                    for (int i = 0; i < BUFFER_SIZE * BITS_PER_SAMPLE / 8; i ++)
-                    {
-                        //pcm_ds_output_buffer[i] = pcm_ds_input_buffer[i];
-                        //volatile_output[i] = volatile_input[i];
-                        temp_output_buffer[i] = volatile_input[i];
-                    }
-                    */
-                    
-                    for( int i =0;i<BUFFER_SIZE;i++)
-                    {
-                        float f = float_new_output[i];
-                        f = f* 32768;
-                        if (f > 32767) f = 32767;
-                        if (f < -32768) f = -32768;
-                        tmp3[i] = (int16_t)f;
-                    }
-                    
-                    
-                    if(temp_count == 0)
-                    {
-                        temp_count ++;
-                        ofstream outfile;
-                        outfile.open("input.dat", ios::binary| ios::out);
-                        outfile.write(temp_output_buffer, BUFFER_SIZE*2);
-                        outfile.close();
-                    }
-                    
-                    
-                    //for tesing error_t
-    
-                    float sum = 0;
-                    for (int i = 0; i < BUFFER_SIZE; i ++)
-                    {
- 
-                        
-                        sum = sum + (float_new_output[i] -float_past_output[i])*(float_new_output[i] -float_past_output[i]);
-                        //sum = sum + (float_input[i] -float_past_output[i])*(float_input[i] -float_past_output[i]);
-                    }                   
-                    printf("%f\n",sum);
-                    sum = (sum)/131072;
-                    printf("square error is %f\n", sum);
-                    
-                    //writeMutex.lock();
-                   // output1_ready = true;
-                    //writeMutex.unlock();
-                    //break;
-                //}
+            
+            if(temp_count == 0)
+            {
+                temp_count ++;
+                ofstream outfile;
+                outfile.open("input.dat", ios::binary| ios::out);
+                outfile.write(temp_output_buffer, BUFFER_SIZE*2);
+                outfile.close();
+            }
+            
+            
+            //for tesing error_t
+
+            float sum = 0;
+            for (int i = 0; i < BUFFER_SIZE; i ++)
+            {
+
                 
-            //}
+                sum = sum + (float_new_output[i] -float_past_output[i])*(float_new_output[i] -float_past_output[i]);
+                //sum = sum + (float_input[i] -float_past_output[i])*(float_input[i] -float_past_output[i]);
+            }                   
+            printf("%f\n",sum);
+            sum = (sum)/131072;
+            printf("square error is %f\n", sum);
             printf("output ready\n");
-            //writeMutex.unlock();
-            /*
-            writeMutex.lock();
-            if (!output1_ready)
-            {
-                output1_ready = true;
-                output2_ready = false;
-            }
-            else 
-            {
-                output1_ready = false;
-                output2_ready = true;
-            }
-            writeMutex.unlock();
-            */
+
             readMutex.lock();
             
             input1_ready = false;
             readMutex.unlock();
         }
-        //readMutex.unlock();
-        //usleep(DSP_SLEEP);
+
     }
 
 
