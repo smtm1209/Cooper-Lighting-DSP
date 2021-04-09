@@ -3,9 +3,14 @@
 
 #include "util.cpp"
 
-#define INPUT_BUFFER_SIZE 64
-#define OUTPUT_BUFFER_SIZE 64
-#define FILTER_LENGTH 10
+#define INPUT_BUFFER_SIZE 131072
+#define OUTPUT_BUFFER_SIZE 131072
+#define BUFFER_SIZE 131072
+#define BITS_PER_SAMPLE 16
+#define FILTER_LENGTH 64
+#define INPUT_CHANNEL 2
+#define OUTPUT_CHANNEL 2
+#define SAMPLE_RATE 44100
 
 #define MIC_SLEEP 10000
 #define DSP_SLEEP 10000
@@ -17,4 +22,6 @@
 #define DSP_LOG_FILENAME "dsplog.txt"
 #define SPEAKER_LOG_FILENAME "speakerlog.txt"
 
+
+#define PCM_DEVICE "hw:2"
 #endif
