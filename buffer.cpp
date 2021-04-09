@@ -7,7 +7,7 @@
 #include "constants.h"
 #include "readMicrophone.cpp"
 #include "dsp.cpp"
-#include "writeSpeaker2Channel2.cpp"
+#include "writeSpeaker.cpp"
 
 using namespace std;
 fstream buffer_log = fstream(BUFFER_LOG_FILENAME, fstream::out);
