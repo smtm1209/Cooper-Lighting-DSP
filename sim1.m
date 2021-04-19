@@ -6,12 +6,12 @@ close all;
 %% Real-World Model Parameters
 
 % Load Original Audio
-mp3_fname = "./signals/coffee_beep.mp3";
+mp3_fname = "./SoundMasking/dogBarking.mp3";
 [raw_sig, fs_original] = audioread(mp3_fname);
 
 % Echo Parameters
-echo_taps = 128;
-echo_loss_db = 0; % voltage dB
+echo_taps = 64;
+echo_loss_db = -5; % voltage dB
 
 % Basic Testing Filter Parameters
 sys_taps = 128;
@@ -22,14 +22,18 @@ sys_delay = 10; % 10 tap delay FIR
 proc_delay = 10;
 
 % Adaptive Filter Taps
-p = 128;
+p = 64;
 
 % NLMS Parameters
-nlms_mu = 1e-5;
+nlms_mu = 0.8e-2;
 nlms_eps = 1e-15;
 
 % Sound Masking Parameters
 dBfactor = -3;
+
+% Room Impulse Parameters
+[h_room, fs_room] = audioread('./IRs/W00x00y.wav');
+
 
 %% System Parameters 
 
@@ -43,7 +47,15 @@ Ts = 1/fs;
 
 % Generate Echo and Plot
 [h_echo, b_echo, a_echo] = genRandomEchoFIR(echo_taps, echo_loss_db);
-freqz(b_echo, a_echo, 2000);
+% freqz(b_echo, a_echo, 2000);
+% h_echo = resample(h_room, fs, fs_room);
+% p = numel(h_echo);
+figure;
+plot(h_echo);
+title("Echo FIR");
+xlabel("Taps");
+drawnow;
+
 
 % Generate System Filter
 h_sys = db2mag(sys_gain_db).*[zeros(sys_delay, 1); ...
@@ -54,7 +66,17 @@ h_delay = [zeros(proc_delay, 1); 1];
 
 % Resample Signal
 raw_sig = mean(raw_sig, 2);
+% raw_sig = raw_sig(1:40000);
 sig = resample(raw_sig, fs, fs_original);
+sig = sig(1:150000);
+
+figure;
+tt = (1/fs)*(0:numel(sig)-1);
+plot(tt, sig);
+title("Incoming Signal");
+ylabel("Amplitude");
+xlabel("Time [s]");
+drawnow
 
 
 %% System Simulation Without Echo
@@ -193,9 +215,9 @@ for k=1:numel(sig)
     e_k = x_k - y_win_canc.' * lms_fir;
     
     % Update LMS Filter based on e_k
-    lms_fir = lms_fir - nlms_mu .* conj(e_k) ...
+    lms_fir = lms_fir + nlms_mu .* conj(e_k) ...
         .*  y_win_canc / (nlms_eps + y_win_canc'*y_win_canc);
-    lms_fir(1) = 0;
+%     lms_fir(1) = 0;
     
     e_win_canc = [e_k; e_win_canc(1:end-1, :)];
     in_canc(k) = e_k;
@@ -221,17 +243,71 @@ for k=1:numel(sig)
     
 end
 
+%% Plot Various Signals
+
+ymin = min([out_noecho; out_nocanc; out_canc]);
+ymax = max([out_noecho; out_nocanc; out_canc]);
+figure;
+subplot(3,1,1);
+plot(tt, out_noecho);
+ylim([ymin ymax]);
+title("Output Signal Without Any Echo");
+xlabel("Time [s]");
+ylabel("Amplitude");
+subplot(3,1,2);
+plot(tt, out_nocanc);
+ylim([ymin ymax]);
+title("Output Signal Without NLMS");
+xlabel("Time [s]");
+ylabel("Amplitude");
+subplot(3,1,3);
+plot(tt, out_canc);
+ylim([ymin ymax]);
+title("Output Signal With NLMS");
+xlabel("Time [s]");
+ylabel("Amplitude");
+
+
+%% Plot Convergence of NLMS
+
+caxis_min = min([min(h_echo) min(lms_fir_hist(:))]);
+caxis_max = max([max(h_echo) max(lms_fir_hist(:))]);
+
+figure;
+subplot(3, 1, [1 2]);
+imagesc(0:(p-1), 20*(1:size(lms_fir_hist, 2)), lms_fir_hist.');
+caxis([caxis_min caxis_max]);
+title("Learned Echo FIR Weights");
+xlabel("FIR Taps");
+ylabel("Time Steps");
+colorbar
+subplot(3, 1, 3);
+% imagesc(0:(p-1), 0:(numel(aa)-1), abs(P_h_rls_tbl.'));
+imagesc(0:(p-1), [0 1], h_echo_delay.');
+caxis([caxis_min caxis_max]);
+title("Actual Echo FIR Weights");
+xlabel("FIR Taps");
+colorbar
+
+%% Plot Convergance L2
+
+figure;
+plot(tt, sqrt(vecnorm(lms_fir_hist - h_echo_delay, 2)));
+title("RMSE of NLMS Calculated Echo vs Actual Echo");
+ylabel("RMSE");
+xlabel("Time [s]");
+
 %% Play Audio for each method
 original_signal_player = audioplayer(sig, fs);
 playblocking(original_signal_player);
 
-noecho_player = audioplayer(out_noecho, fs);
+noecho_player = audioplayer(out_noecho+sig, fs);
 playblocking(noecho_player);
 
-nocanc_player = audioplayer(out_nocanc, fs);
+nocanc_player = audioplayer(out_nocanc+sig, fs);
 playblocking(nocanc_player);
 
-canc_player = audioplayer(out_canc, fs);
+canc_player = audioplayer(out_canc+sig, fs);
 playblocking(canc_player);
 
 
