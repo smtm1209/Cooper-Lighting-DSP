@@ -11,6 +11,7 @@
 #define INPUT_CHANNEL 2
 #define OUTPUT_CHANNEL 2
 #define SAMPLE_RATE 44100
+#define CHANNELS 2
 
 #define MIC_SLEEP 10000
 #define DSP_SLEEP 10000
@@ -21,7 +22,6 @@
 #define MICROPHONE_LOG_FILENAME "miclog.txt"
 #define DSP_LOG_FILENAME "dsplog.txt"
 #define SPEAKER_LOG_FILENAME "speakerlog.txt"
-
 
 #define PCM_DEVICE "hw:2"
 #endif
