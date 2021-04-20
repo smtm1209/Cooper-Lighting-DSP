@@ -3,6 +3,9 @@
 
 #include "util.cpp"
 
+#define BROKER_IP "192.168.137.39"
+#define PORT 1883
+
 #define INPUT_BUFFER_SIZE 131072
 #define OUTPUT_BUFFER_SIZE 131072
 #define BUFFER_SIZE 131072
