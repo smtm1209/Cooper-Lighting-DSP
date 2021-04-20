@@ -24,7 +24,7 @@ for n = N:length(x)
  xx = x(n:-1:n-(N-1));
  % produce filtered output sample
 
- dhat(n) = w * x(n:-1:n-(N-1))';
+ dhat(n) = w * x(n:-1:n-(N-1))';a
  % update the filter coefficients
  e(n) = d(n) - dhat(n);
  2*mu*xx*e(n)'/(xx*xx');

@@ -28,6 +28,11 @@ p = 64;
 nlms_mu = 0.8e-2;
 nlms_eps = 1e-15;
 
+% Volterra Parameters
+volterra_mu0 = 1e-3;
+volterra_mu1 = 1e-2;
+volterra_mu2 = 1e-4;
+
 % Sound Masking Parameters
 dBfactor = -3;
 
@@ -243,27 +248,106 @@ for k=1:numel(sig)
     
 end
 
+%% System Simulation With Echo Cancellation
+
+out_volterra = zeros(numel(sig), 1);
+in_volterra = zeros(numel(sig), 1);
+pre_volterra = zeros(numel(sig), 1);
+
+y_win_volterra = zeros(p, 1);
+e_win_volterra = zeros(p, 1);
+
+volterra_const = 0;
+volterra_linear = zeros(p, 1);
+volterra_quadratic = zeros(p);
+
+volterra_linear_hist = zeros(p, numel(sig));
+
+h_echo_delay = conv(h_echo, h_delay);
+h_echo_delay = h_echo_delay(1:p);
+
+for k=1:numel(sig)
+    if mod(k, 10000) == 0
+        fprintf("Volterra....[%d/%d]\n", k, numel(sig));
+    end
+    
+    if k - proc_delay >= 1
+        a_k = sig(k-proc_delay);
+    else
+        a_k = 0;
+    end
+    
+    % x_k = sample received from microphone at start of
+    % adaptive filter
+    x_k = a_k + h_echo_delay.' * y_win_volterra;
+    pre_volterra(k) = x_k;
+    
+    % e_k = output of adaptive filter
+    volterra_linear_hist(:, k) = volterra_linear;
+    e_k = x_k ...
+        - volterra_const ...
+        - volterra_linear.' * y_win_volterra ...
+        - y_win_volterra.' * volterra_quadratic * y_win_volterra;
+    
+    % Update Volterra Filter based on e_k
+    volterra_const = volterra_const ...
+        + volterra_mu0 .* e_k;
+    volterra_linear = volterra_linear ...
+        + volterra_mu1 .* e_k .* y_win_volterra;
+    volterra_quadratic = volterra_quadratic ...
+        + volterra_mu2 .* e_k .* (y_win_volterra * y_win_volterra.');
+    
+    e_win_volterra = [e_k; e_win_volterra(1:end-1, :)];
+    in_volterra(k) = e_k;
+    
+    % apply system filter
+    Efft = fft(e_win_volterra);
+    Emag = abs(Efft);
+    Edb = 20*log10(Emag);
+    
+    Sdb = Edb + dBfactor;
+    Smag = 10.^(Sdb/20);
+    
+    w = randn(numel(Smag), 1);
+    W = fft(w);
+    W = W./abs(W);
+    S = Smag .* W;
+    s = ifft(S);
+    y_k = s(end);
+    
+    % prep for next iteration    
+    out_volterra(k) = y_k;
+    y_win_volterra = [y_k; y_win_volterra(1:end-1, :)];
+    
+end
+
 %% Plot Various Signals
 
-ymin = min([out_noecho; out_nocanc; out_canc]);
-ymax = max([out_noecho; out_nocanc; out_canc]);
+ymin = min([out_noecho; out_nocanc; out_canc; out_volterra]);
+ymax = max([out_noecho; out_nocanc; out_canc; out_volterra]);
 figure;
-subplot(3,1,1);
+subplot(4,1,1);
 plot(tt, out_noecho);
 ylim([ymin ymax]);
 title("Output Signal Without Any Echo");
 xlabel("Time [s]");
 ylabel("Amplitude");
-subplot(3,1,2);
+subplot(4,1,2);
 plot(tt, out_nocanc);
 ylim([ymin ymax]);
 title("Output Signal Without NLMS");
 xlabel("Time [s]");
 ylabel("Amplitude");
-subplot(3,1,3);
+subplot(4,1,3);
 plot(tt, out_canc);
 ylim([ymin ymax]);
 title("Output Signal With NLMS");
+xlabel("Time [s]");
+ylabel("Amplitude");
+subplot(4,1,4);
+plot(tt, out_volterra);
+ylim([ymin ymax]);
+title("Output Signal With Volterra LMS");
 xlabel("Time [s]");
 ylabel("Amplitude");
 
@@ -289,6 +373,27 @@ title("Actual Echo FIR Weights");
 xlabel("FIR Taps");
 colorbar
 
+%% Plot Convergence of Volterra Linear Part
+
+caxis_min = min([min(h_echo) min(volterra_linear_hist(:))]);
+caxis_max = max([max(h_echo) max(volterra_linear_hist(:))]);
+
+figure;
+subplot(3, 1, [1 2]);
+imagesc(0:(p-1), 20*(1:size(volterra_linear_hist, 2)), volterra_linear_hist.');
+caxis([caxis_min caxis_max]);
+title("Learned Volterra Linear Portion");
+xlabel("FIR Taps");
+ylabel("Time Steps");
+colorbar
+subplot(3, 1, 3);
+% imagesc(0:(p-1), 0:(numel(aa)-1), abs(P_h_rls_tbl.'));
+imagesc(0:(p-1), [0 1], h_echo_delay.');
+caxis([caxis_min caxis_max]);
+title("Actual Echo FIR Weights");
+xlabel("FIR Taps");
+colorbar
+
 %% Plot Convergance L2
 
 figure;
@@ -297,24 +402,28 @@ title("RMSE of NLMS Calculated Echo vs Actual Echo");
 ylabel("RMSE");
 xlabel("Time [s]");
 
-
-
 %% Play Audio for each method
 fprintf("Raw Signal");
 original_signal_player = audioplayer(sig, fs);
 playblocking(original_signal_player);
 
-fprintf("Dog With Noise Cancellation and No Echo");
+fprintf("Dog With Noise Cancellation and No Echo\n");
 noecho_player = audioplayer(out_noecho+sig, fs);
 playblocking(noecho_player);
 
-fprintf("Dog With Noise Cancellation and No Echo Cancellation");
+fprintf("Dog With Noise Cancellation and No Echo Cancellation\n");
 nocanc_player = audioplayer(out_nocanc+sig, fs);
 playblocking(nocanc_player);
 
-fprintf("Dog With Noise Cancellation and LMS Echo Cancellation");
+fprintf("Dog With Noise Cancellation and LMS Echo Cancellation\n");
 canc_player = audioplayer(out_canc+sig, fs);
 playblocking(canc_player);
+
+fprintf("Dog With Noise Cancellation and Volterra Echo Cancellation\n");
+volterra_player = audioplayer(out_volterra+sig, fs);
+playblocking(volterra_player);
+
+
 
 
 
